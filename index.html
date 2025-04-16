@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auryn - URL Manager</title>
+    <style>
+        :root {
+            --lavender-web: #d8d8f6ff;
+            --african-violet: #b18fcfff;
+            --rose-quartz: #978897ff;
+            --davys-gray: #494850ff;
+            --raisin-black: #2c2c34ff;
+            
+            /* Light mode */
+            --light-bg: #f5f5f5;
+            --light-text: #333333;
+            --light-primary: #7c4dff;
+            --light-secondary: #b39ddb;
+            --light-card: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            background-color: var(--raisin-black);
+            color: var(--lavender-web);
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body.light-mode {
+            background-color: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        /* Particle.js canvas */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        body.particles-enabled #particles-js {
+            opacity: 1;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--davys-gray);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .light-mode .modal-content {
+            background-color: var(--light-card);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--lavender-web);
+        }
+
+        .light-mode .close-modal {
+            color: var(--light-text);
+        }
+
+        /* Header styles */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: var(--african-violet);
+            margin: 0;
+        }
+
+        .light-mode h1 {
+            color: var(--light-primary);
+        }
+
+        /* Input row styles */
+        .input-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"], select {
+            padding: 10px;
+            border: 1px solid var(--davys-gray);
+            border-radius: 10px;
+            background-color: var(--rose-quartz);
+            color: var(--raisin-black);
+            transition: all 0.3s;
+            width: 200px;
+        }
+
+        .light-mode input[type="text"],
+        .light-mode select {
+            background-color: var(--light-card);
+            color: var(--light-text);
+            border-color: #ccc;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--african-violet);
+            outline: none;
+        }
+
+        .light-mode input[type="text"]:focus {
+            border-color: var(--light-primary);
+        }
+
+        /* Button styles */
+        .button-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--african-violet);
+            color: var(--raisin-black);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .light-mode button {
+            background-color: var(--light-primary);
+            color: white;
+        }
+
+        button:hover {
+            background-color: var(--lavender-web);
+            transform: translateY(-2px);
+        }
+
+        .light-mode button:hover {
+            background-color: var(--light-secondary);
+        }
+
+        /* Saved URLs styles */
+        #savedUrls {
+            margin-top: 20px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .savedUrl {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+            padding: 8px;
+            background-color: var(--davys-gray);
+            border-radius: 5px;
+            transition: all 0.3s;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .light-mode .savedUrl {
+            background-color: var(--light-card);
+            color: var(--light-text);
+        }
+
+        .savedUrl:hover {
+            background-color: var(--rose-quartz);
+        }
+
+        .light-mode .savedUrl:hover {
+            background-color: #f0f0f0;
+        }
+
+        .savedUrl button {
+            margin-left: 10px;
+            background-color: var(--african-violet);
+        }
+
+        .light-mode .savedUrl button {
+            background-color: var(--light-primary);
+        }
+
+        .savedUrl button:hover {
+            background-color: var(--lavender-web);
+        }
+
+        /* Theme toggle */
+        #themeToggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--african-violet);
+            color: var(--raisin-black);
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .light-mode #themeToggle {
+            background: var(--light-primary);
+            color: white;
+        }
+
+        /* URL status indicator */
+        .url-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .url-status.valid {
+            background-color: #4CAF50;
+        }
+
+        .url-status.invalid {
+            background-color: #F44336;
+        }
+
+        .url-status.checking {
+            background-color: #FFC107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Particle controls */
+        .particle-controls {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--rose-quartz);
+        }
+
+        .light-mode .particle-controls {
+            border-top-color: var(--light-secondary);
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .control-group label {
+            margin-right: 10px;
+        }
+
+        .control-group input[type="range"] {
+            width: 150px;
+        }
+
+        /* Checkbox styling */
+        #particlesToggle {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <button id="themeToggle">Light Mode</button>
+    <div id="particles-js"></div>
+
+    <header>
+        <h1>Auryn</h1>
+    </header>
+
+    <div class="input-row">
+        <div class="input-group">
+            <input type="text" id="nameInput" placeholder="Site name" autocomplete="off" />
+        </div>
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="Website URL" autocomplete="off" />
+            <span id="urlStatus" class="url-status"></span>
+        </div>
+        <select id="embedType">
+            <option value="iframe">Iframe</option>
+            <option value="embed">Embed</option>
+        </select>
+    </div>
+    
+    <div class="button-row">
+        <button onclick="openLink()">Open URL</button>
+        <button onclick="saveUrl()">Save URL</button>
+        <button onclick="openSettings()">Settings</button>
+    </div>
+
+    <div id="savedUrls"></div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeSettings()">&times;</span>
+            <h3>Settings</h3>
+            
+            <button onclick="exportUrls()">Export All URLs as JSON</button>
+            <div id="exportResult" style="margin-top: 10px;"></div>
+            
+            <h4 style="margin-bottom: 5px;">Import URLs</h4>
+            <input type="file" id="importFile" accept=".json" style="margin-bottom: 10px; width: 100%;">
+            <button onclick="importUrls()">Import URLs</button>
+            
+            <div style="margin-top: 20px;">
+                <label>
+                    <input type="checkbox" id="particlesToggle"> Enable Particle Background
+                </label>
+            </div>
+            
+            <div class="particle-controls">
+                <h4>Particle Controls</h4>
+                <div class="control-group">
+                    <label for="particleCount">Particle Count:</label>
+                    <input type="range" id="particleCount" min="10" max="200" value="80">
+                    <span id="particleCountValue">80</span>
+                </div>
+                <div class="control-group">
+                    <label for="particleSize">Particle Size:</label>
+                    <input type="range" id="particleSize" min="1" max="10" value="3" step="0.5">
+                    <span id="particleSizeValue">3</span>
+                </div>
+                <div class="control-group">
+                    <label for="particleSpeed">Particle Speed:</label>
+                    <input type="range" id="particleSpeed" min="0.1" max="5" value="1" step="0.1">
+                    <span id="particleSpeedValue">1</span>
+                </div>
+                <div class="control-group">
+                    <label for="lineDistance">Line Distance:</label>
+                    <input type="range" id="lineDistance" min="50" max="300" value="150">
+                    <span id="lineDistanceValue">150</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load particle.js library -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <script>
+        // Theme Management - Fixed Version
+        const themeToggle = document.getElementById('themeToggle');
+        
+        // Initialize theme from localStorage or default to dark
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggle.textContent = 'Dark Mode';
+            } else {
+                document.body.classList.remove('light-mode');
+                themeToggle.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        // Toggle theme on button click
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-mode');
+            if (isLight) {
+                localStorage.setItem('theme', 'light');
+                themeToggle.textContent = 'Dark Mode';
+            } else {
+                localStorage.setItem('theme', 'dark');
+                themeToggle.textContent = 'Light Mode';
+            }
+            
+            // Reinitialize particles if they're enabled
+            if (particlesEnabled) {
+                initParticles();
+            }
+        });
+
+        // Initialize theme on page load
+        initTheme();
+
+        // Modal Functions
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('settingsModal')) {
+                closeSettings();
+            }
+        });
+
+        // URL Validation
+        const urlStatus = document.getElementById('urlStatus');
+        let validationTimeout;
+        
+        async function validateUrl(url) {
+            if (!url) {
+                urlStatus.className = 'url-status';
+                return false;
+            }
+            
+            // Skip validation for local paths
+            if (/^(file:\/\/|\.?\/)/.test(url)) {
+                urlStatus.className = 'url-status valid';
+                return true;
+            }
+            
+            urlStatus.className = 'url-status checking';
+            
+            try {
+                // Add https:// if missing
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                }
+                
+                // Simple HEAD request validation
+                const response = await fetch(url, { 
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                
+                urlStatus.className = 'url-status valid';
+                return true;
+            } catch (error) {
+                urlStatus.className = 'url-status invalid';
+                return false;
+            }
+        }
+        
+        document.getElementById('urlInput').addEventListener('input', (e) => {
+            clearTimeout(validationTimeout);
+            validationTimeout = setTimeout(() => {
+                validateUrl(e.target.value.trim());
+            }, 500);
+        });
+
+        // Particle.js Background
+        let particlesEnabled = localStorage.getItem('particlesEnabled') === 'true';
+        const particlesToggle = document.getElementById('particlesToggle');
+        particlesToggle.checked = particlesEnabled;
+        
+        // Particle controls
+        const particleControls = {
+            count: parseInt(localStorage.getItem('particleCount')) || 80,
+            size: parseFloat(localStorage.getItem('particleSize')) || 3,
+            speed: parseFloat(localStorage.getItem('particleSpeed')) || 1,
+            lineDistance: parseInt(localStorage.getItem('lineDistance')) || 150
+        };
+
+        // Initialize control values
+        document.getElementById('particleCount').value = particleControls.count;
+        document.getElementById('particleCountValue').textContent = particleControls.count;
+        document.getElementById('particleSize').value = particleControls.size;
+        document.getElementById('particleSizeValue').textContent = particleControls.size;
+        document.getElementById('particleSpeed').value = particleControls.speed;
+        document.getElementById('particleSpeedValue').textContent = particleControls.speed;
+        document.getElementById('lineDistance').value = particleControls.lineDistance;
+        document.getElementById('lineDistanceValue').textContent = particleControls.lineDistance;
+
+        // Update controls
+        document.getElementById('particleCount').addEventListener('input', function() {
+            particleControls.count = this.value;
+            document.getElementById('particleCountValue').textContent = this.value;
+            localStorage.setItem('particleCount', this.value);
+            if (particlesEnabled) initParticles();
+        });
+
+        document.getElementById('particleSize').addEventListener('input', function() {
+            particleControls.size = this.value;
+            document.getElementById('particleSizeValue').textContent = this.value;
+            localStorage.setItem('particleSize', this.value);
+            if (particlesEnabled) initParticles();
+        });
+
+        document.getElementById('particleSpeed').addEventListener('input', function() {
+            particleControls.speed = this.value;
+            document.getElementById('particleSpeedValue').textContent = this.value;
+            localStorage.setItem('particleSpeed', this.value);
+            if (particlesEnabled) initParticles();
+        });
+
+        document.getElementById('lineDistance').addEventListener('input', function() {
+            particleControls.lineDistance = this.value;
+            document.getElementById('lineDistanceValue').textContent = this.value;
+            localStorage.setItem('lineDistance', this.value);
+            if (particlesEnabled) initParticles();
+        });
+
+        function initParticles() {
+            if (!particlesEnabled) {
+                document.body.classList.remove('particles-enabled');
+                return;
+            }
+            
+            document.body.classList.add('particles-enabled');
+            const primaryColor = document.body.classList.contains('light-mode') ? 
+                getComputedStyle(document.body).getPropertyValue('--light-primary') : 
+                getComputedStyle(document.body).getPropertyValue('--african-violet');
+            
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": {
+                        "value": particleControls.count,
+                        "density": {
+                            "enable": true,
+                            "value_area": 800
+                        }
+                    },
+                    "color": {
+                        "value": primaryColor
+                    },
+                    "shape": {
+                        "type": "circle",
+                        "stroke": {
+                            "width": 0,
+                            "color": "#000000"
+                        }
+                    },
+                    "opacity": {
+                        "value": 0.5,
+                        "random": true,
+                        "anim": {
+                            "enable": true,
+                            "speed": 1,
+                            "opacity_min": 0.1,
+                            "sync": false
+                        }
+                    },
+                    "size": {
+                        "value": particleControls.size,
+                        "random": true,
+                        "anim": {
+                            "enable": true,
+                            "speed": 2,
+                            "size_min": 0.1,
+                            "sync": false
+                        }
+                    },
+                    "line_linked": {
+                        "enable": true,
+                        "distance": particleControls.lineDistance,
+                        "color": primaryColor,
+                        "opacity": 0.4,
+                        "width": 1
+                    },
+                    "move": {
+                        "enable": true,
+                        "speed": particleControls.speed,
+                        "direction": "none",
+                        "random": true,
+                        "straight": false,
+                        "out_mode": "out",
+                        "bounce": false,
+                        "attract": {
+                            "enable": true,
+                            "rotateX": 600,
+                            "rotateY": 1200
+                        }
+                    }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": {
+                        "onhover": {
+                            "enable": true,
+                            "mode": "grab"
+                        },
+                        "onclick": {
+                            "enable": true,
+                            "mode": "push"
+                        },
+                        "resize": true
+                    },
+                    "modes": {
+                        "grab": {
+                            "distance": 140,
+                            "line_linked": {
+                                "opacity": 1
+                            }
+                        },
+                        "push": {
+                            "particles_nb": 4
+                        }
+                    }
+                },
+                "retina_detect": true
+            });
+        }
+
+        particlesToggle.addEventListener('change', function() {
+            particlesEnabled = this.checked;
+            localStorage.setItem('particlesEnabled', particlesEnabled);
+            if (particlesEnabled) {
+                initParticles();
+            } else {
+                document.body.classList.remove('particles-enabled');
+            }
+        });
+
+        // URL Management Functions
+        async function saveUrl() {
+            const url = document.getElementById('urlInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim();
+    
+            if (!url || !name) {
+                alert('Please enter a valid URL and a name to save');
+                return;
+            }
+            
+            if (!urlStatus.classList.contains('valid')) {
+                const isValid = await validateUrl(url);
+                if (!isValid && !confirm('This URL might be invalid. Save anyway?')) {
+                    return;
+                }
+            }
+    
+            let savedUrls = JSON.parse(localStorage.getItem('savedUrls')) || [];
+            const existing = savedUrls.find(item => item.name === name);
+            if (!existing) {
+                savedUrls.push({ name, url });
+                localStorage.setItem('savedUrls', JSON.stringify(savedUrls));
+                loadSavedUrls();
+                document.getElementById('nameInput').value = '';
+                document.getElementById('urlInput').value = '';
+                urlStatus.className = 'url-status';
+            } else {
+                alert('This name is already saved. Please choose a different name.');
+            }
+        }
+        
+        function openLink(name, url) {
+    const urlInput = document.getElementById('urlInput').value;
+    const nameInput = document.getElementById('nameInput').value;
+
+    let urlToOpen, nameToUse;
+
+    if (name && url) {
+        urlToOpen = url;
+        nameToUse = name;
+    } else {
+        if (!urlInput) {
+            alert('Please enter a valid URL or file path');
+            return;
+        }
+        urlToOpen = urlInput;
+        nameToUse = nameInput || urlInput;
+    }
+
+    const newWindow = window.open('about:blank', '_blank');
+    newWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <title>${nameToUse}</title>
+            <style>
+                body { margin: 0; }
+                iframe { width: 100vw; height: 100vh; border: none; }
+            </style>
+        </head>
+        <body>
+            <iframe src="${urlToOpen}" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
+        </body>
+        </html>
+    `);
+    newWindow.document.close();
+
+    // Inject script AFTER the document is written
+    newWindow.onload = () => {
+        const script = newWindow.document.createElement('script');
+        script.textContent = `
+            window.addEventListener('beforeunload', function (e) {
+                e.preventDefault();
+                e.returnValue = '';
+            });
+        `;
+        newWindow.document.body.appendChild(script);
+    };
+}
+
+        function deleteUrl(name) {
+            let savedUrls = JSON.parse(localStorage.getItem('savedUrls')) || [];
+            savedUrls = savedUrls.filter(item => item.name !== name);
+            localStorage.setItem('savedUrls', JSON.stringify(savedUrls));
+            loadSavedUrls();
+        }
+    
+        function loadSavedUrls() {
+            const savedUrls = JSON.parse(localStorage.getItem('savedUrls')) || [];
+            const savedUrlsDiv = document.getElementById('savedUrls');
+            savedUrlsDiv.innerHTML = '<h3>Saved URLs:</h3>';
+            
+            if (savedUrls.length === 0) {
+                savedUrlsDiv.innerHTML += '<p>No saved URLs yet</p>';
+                return;
+            }
+            
+            savedUrls.forEach(item => {
+                const urlDiv = document.createElement('div');
+                urlDiv.className = 'savedUrl';
+                
+                const button = document.createElement('button');
+                button.innerText = item.name;
+                button.onclick = () => openLink(item.name, item.url);
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.innerText = 'Delete';
+                deleteButton.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteUrl(item.name);
+                };
+                
+                urlDiv.appendChild(button);
+                urlDiv.appendChild(deleteButton);
+                savedUrlsDiv.appendChild(urlDiv);
+            });
+        }
+        
+        function exportUrls() {
+            const savedUrls = JSON.parse(localStorage.getItem('savedUrls')) || [];
+            if (savedUrls.length === 0) {
+                document.getElementById('exportResult').innerText = "No URLs to export";
+                return;
+            }
+
+            // Convert to JSON and encode as Base64
+            const jsonStr = JSON.stringify(savedUrls);
+            const encodedData = btoa(unescape(encodeURIComponent(jsonStr)));
+            
+            // Create download
+            const blob = new Blob([encodedData], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'auryn_export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('exportResult').innerHTML = 
+                `Exported ${savedUrls.length} URLs (Base64 encoded)!`;
+        }
+        
+        function importUrls() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Please select an exported file first");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    // Read and decode the Base64 content
+                    const fileContent = e.target.result;
+                    const decodedData = decodeURIComponent(escape(atob(fileContent)));
+                    const importedUrls = JSON.parse(decodedData);
+                    
+                    if (!Array.isArray(importedUrls)) {
+                        throw new Error("Invalid file format");
+                    }
+                    
+                    // Merge with existing URLs
+                    const existingUrls = JSON.parse(localStorage.getItem('savedUrls')) || [];
+                    const combinedUrls = [...existingUrls];
+                    let newCount = 0;
+                    
+                    importedUrls.forEach(newUrl => {
+                        if (!existingUrls.some(u => u.name === newUrl.name)) {
+                            combinedUrls.push(newUrl);
+                            newCount++;
+                        }
+                    });
+                    
+                    // Save and update UI
+                    localStorage.setItem('savedUrls', JSON.stringify(combinedUrls));
+                    loadSavedUrls();
+                    document.getElementById('exportResult').innerText = 
+                        `Imported ${newCount} URLs (${importedUrls.length - newCount} duplicates skipped)`;
+                    fileInput.value = '';
+                } catch (error) {
+                    document.getElementById('exportResult').innerText = 
+                        "Import failed: " + error.message;
+                    console.error("Import error:", error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize
+        window.onload = function() {
+            initTheme();
+            loadSavedUrls();
+            if (particlesEnabled) {
+                // Small delay to ensure DOM is fully loaded
+                setTimeout(initParticles, 100);
+            }
+        };
+    </script>
+</body>
+</html>

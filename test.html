@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Auryn Admin Dashboard</title>
+  <style>
+    :root {
+      --lavender-web: #d8d8f6ff;
+      --african-violet: #b18fcfff;
+      --rose-quartz: #978897ff;
+      --davys-gray: #494850ff;
+      --raisin-black: #2c2c34ff;
+      --light-bg: #f5f5f5;
+      --light-text: #333333;
+      --light-primary: #7c4dff;
+      --light-card: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: var(--raisin-black);
+      color: var(--lavender-web);
+    }
+
+    .dashboard {
+      padding: 20px;
+    }
+
+    h1 {
+      color: var(--african-violet);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background-color: var(--davys-gray);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      color: var(--lavender-web);
+    }
+
+    .card p {
+      font-size: 1.5em;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .actions {
+      margin-top: 40px;
+    }
+
+    .actions h2 {
+      text-align: center;
+      color: var(--african-violet);
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: var(--african-violet);
+      color: var(--raisin-black);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: var(--lavender-web);
+    }
+
+    .log-section {
+      margin-top: 50px;
+      padding: 20px;
+      background-color: var(--rose-quartz);
+      border-radius: 10px;
+      color: var(--raisin-black);
+    }
+
+    .log-section h3 {
+      margin-top: 0;
+    }
+
+    .log-entry {
+      margin: 5px 0;
+      border-bottom: 1px solid var(--davys-gray);
+      padding-bottom: 5px;
+    }
+
+    @media (max-width: 600px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>Admin Dashboard</h1>
+
+    <div class="stats">
+      <div class="card">
+        <h3>Total URLs</h3>
+        <p id="totalUrls">0</p>
+      </div>
+      <div class="card">
+        <h3>Active Users</h3>
+        <p id="activeUsers">0</p>
+      </div>
+      <div class="card">
+        <h3>Server Status</h3>
+        <p id="serverStatus" style="color: #4caf50;">Checking...</p>
+      </div>
+      <div class="card">
+        <h3>Pending Imports</h3>
+        <p id="pendingImports">0</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <h2>Admin Actions</h2>
+      <div class="button-group">
+        <button onclick="manageUsers()">Manage Users</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <button onclick="exportBackup()">Export Backup</button>
+        <button onclick="window.location.href='index.html'">Back to Site</button>
+      </div>
+    </div>
+
+    <div class="log-section">
+      <h3>Recent Activity</h3>
+      <div id="logEntries">
+        <div class="log-entry">Loading logs...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let db;
+    const request = indexedDB.open("AurynDB", 1);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      db.createObjectStore("urls", { keyPath: "name" });
+      db.createObjectStore("logs", { autoIncrement: true });
+      db.createObjectStore("meta", { keyPath: "key" });
+    };
+
+    request.onsuccess = function(event) {
+      db = event.target.result;
+      initDashboard();
+    };
+
+    function initDashboard() {
+      countUrls();
+      updateMeta("activeUsers", 7);
+      updateMeta("pendingImports", 3);
+      updateServerStatus();
+      loadLogs();
+    }
+
+    function countUrls() {
+      const tx = db.transaction("urls", "readonly");
+      const store = tx.objectStore("urls");
+      const countRequest = store.count();
+      countRequest.onsuccess = () => {
+        document.getElementById("totalUrls").textContent = countRequest.result;
+      };
+    }
+
+    function updateMeta(key, defaultValue) {
+      const tx = db.transaction("meta", "readonly");
+      const store = tx.objectStore("meta");
+      const getReq = store.get(key);
+
+      getReq.onsuccess = () => {
+        let value = getReq.result ? getReq.result.value : defaultValue;
+        document.getElementById(key).textContent = value;
+        if (!getReq.result) {
+          const writeTx = db.transaction("meta", "readwrite");
+          writeTx.objectStore("meta").put({ key, value });
+        }
+      };
+    }
+
+    function updateServerStatus() {
+      const statusEl = document.getElementById('serverStatus');
+      fetch(window.location.href, { method: 'HEAD' })
+        .then(() => statusEl.textContent = 'Online')
+        .catch(() => {
+          statusEl.textContent = 'Offline';
+          statusEl.style.color = '#f44336';
+        });
+    }
+
+    function loadLogs() {
+      const tx = db.transaction("logs", "readonly");
+      const store = tx.objectStore("logs");
+      const request = store.getAll();
+      const logContainer = document.getElementById("logEntries");
+      logContainer.innerHTML = "";
+
+      request.onsuccess = () => {
+        const logs = request.result;
+        if (logs.length === 0) {
+          logContainer.innerHTML = '<div class="log-entry">No logs yet.</div>';
+        }
+        logs.forEach(log => {
+          const div = document.createElement("div");
+          div.className = "log-entry";
+          div.textContent = log;
+          logContainer.appendChild(div);
+        });
+      }
+    }
+
+    function clearLogs() {
+      const tx = db.transaction("logs", "readwrite");
+      const store = tx.objectStore("logs");
+      const clearReq = store.clear();
+      clearReq.onsuccess = loadLogs;
+    }
+
+    function exportBackup() {
+      const tx = db.transaction(["urls", "logs", "meta"], "readonly");
+      const urlsStore = tx.objectStore("urls");
+      const logsStore = tx.objectStore("logs");
+      const metaStore = tx.objectStore("meta");
+
+      Promise.all([
+        new Promise(res => urlsStore.getAll().onsuccess = e => res(e.target.result)),
+        new Promise(res => logsStore.getAll().onsuccess = e => res(e.target.result)),
+        new Promise(res => metaStore.getAll().onsuccess = e => res(e.target.result))
+      ]).then(([urls, logs, meta]) => {
+        const exportData = { urls, logs, meta };
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'auryn_backup.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    }
+
+    function manageUsers() {
+      const tx = db.transaction("meta", "readonly");
+      const store = tx.objectStore("meta");
+      const req = store.get("activeUsers");
+      req.onsuccess = () => {
+        alert('Active users: ' + (req.result?.value || 0));
+      }
+    }
+  </script>
+</body>
+</html>
