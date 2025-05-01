@@ -715,21 +715,50 @@
     }
 
     const newWindow = window.open('about:blank', '_blank');
-    newWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <title>${nameToUse}</title>
-            <style>
-                body { margin: 0; }
-                iframe { width: 100vw; height: 100vh; border: none; }
-            </style>
-        </head>
-        <body>
-            <iframe src="${urlToOpen}" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
-        </body>
-        </html>
-    `);
+   newWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>${nameToUse}</title>
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+            iframe {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                position: relative;
+                z-index: 999999;
+            }
+        </style>
+    </head>
+    <body>
+        <iframe id="siteFrame" src="${urlToOpen}" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
+        <script>
+            setTimeout(() => {
+                const iframe = document.getElementById("siteFrame");
+                const rect = iframe.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const topElement = document.elementFromPoint(centerX, centerY);
+
+                if (topElement && topElement !== iframe) {
+                    alert("Warning: Another element is covering the iframe!");
+                    console.warn("Covered by:", topElement);
+                } else {
+                    console.log("Iframe is fully visible at the center.");
+                }
+            }, 1000); // wait 1s for the iframe and overlays to render
+        </script>
+    </body>
+    </html>
+`);
+
     newWindow.document.close();
 
     // Inject script AFTER the document is written
