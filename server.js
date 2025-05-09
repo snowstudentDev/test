@@ -48,6 +48,7 @@ app.get('/', (req, res) => {
           height: 100vh;
           background-color: var(--bg-dark);
           color: var(--text-dark);
+          z-index: 9000;
         }
         #browser-controls {
           display: flex;
